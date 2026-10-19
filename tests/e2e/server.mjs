@@ -1,0 +1,10 @@
+import fs from 'node:fs';import http from 'node:http';import nodeCrypto from 'node:crypto';import {DatabaseSync} from 'node:sqlite';
+crypto.subtle.timingSafeEqual??=(a,b)=>nodeCrypto.timingSafeEqual(Buffer.from(a),Buffer.from(b));process.chdir('/home/claude/stencyl');
+const db=new DatabaseSync(':memory:');for(const f of['schema.sql','migrations/0002_v2.sql','migrations/0003_images.sql'])db.exec(fs.readFileSync(f,'utf8'));
+const D1={prepare(sql){let a=[];const st={bind(...x){a=x;return st},async first(){return db.prepare(sql).get(...a)??null},async all(){return{results:db.prepare(sql).all(...a)}},async run(){const r=db.prepare(sql).run(...a);return{meta:{changes:Number(r.changes)}}}};return st}};
+const ASSETS={fetch:async u=>{const p=new URL(typeof u==='string'?u:u.url).pathname.slice(1);return new Response(fs.readFileSync('public/'+p))}};
+const real=JSON.parse(fs.readFileSync('/mnt/user-data/uploads/stencyl-backup-2026-10-18.json','utf8')).live;db.prepare("INSERT INTO site VALUES('live',?,?,1)").run(JSON.stringify(real),Date.now());
+const env={DB:D1,ASSETS,ADMIN_PASSWORD:'correct horse battery staple'};const {default:W}=await import('/home/claude/stencyl/src/worker.js');
+http.createServer(async(q,s)=>{const ch=[];for await(const c of q)ch.push(c);const body=Buffer.concat(ch);const h=new Headers();for(const[k,v]of Object.entries(q.headers))h.set(k,v);
+ const r=await W.fetch(new Request('http://localhost:8787'+q.url,{method:q.method,headers:h,body:['GET','HEAD'].includes(q.method)?undefined:body}),env);
+ const out={};r.headers.forEach((v,k)=>out[k]=v);const sc=r.headers.getSetCookie?.();if(sc&&sc.length)out['set-cookie']=sc;s.writeHead(r.status,out);s.end(Buffer.from(await r.arrayBuffer()))}).listen(8787,()=>console.log('up'));
