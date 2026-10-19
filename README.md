@@ -1,4 +1,4 @@
-# $TENCYL V2 (Cloudflare Worker + D1)
+# $TENCYL V2 (Cloudflare Worker + D1) - Deployed
 
 One Worker serves the public site (server-rendered from D1), `/dashboard`, and the API. **Nothing here touches your production database until you run the commands below yourself.**
 
